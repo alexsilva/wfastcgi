@@ -933,9 +933,18 @@ Ensure your user has sufficient privileges and try again.''' % args, file=sys.st
         return ex.returncode
 
 
+def get_filepath():
+    """Returns the absolute path of the script with the 'py' extension"""
+    # Avoid using the script with the pyc extension
+    return os.path.splitext(__file__)[0] + '.py'
+
+
 def enable():
     executable = '"' + sys.executable + '"' if ' ' in sys.executable else sys.executable
-    quoted_file = '"' + __file__ + '"' if ' ' in __file__ else __file__
+    filepath = get_filepath()
+
+    quoted_file = '"' + filepath + '"' if ' ' in filepath else filepath
+
     res = _run_appcmd([
         "set", "config", "/section:system.webServer/fastCGI",
         "/+[fullPath='" + executable + "', arguments='" + quoted_file + "', signalBeforeTerminateSeconds='30']"
@@ -948,7 +957,9 @@ def enable():
 
 def disable():
     executable = '"' + sys.executable + '"' if ' ' in sys.executable else sys.executable
-    quoted_file = '"' + __file__ + '"' if ' ' in __file__ else __file__
+    filepath = get_filepath()
+
+    quoted_file = '"' + filepath + '"' if ' ' in filepath else filepath
     res = _run_appcmd([
         "set", "config", "/section:system.webServer/fastCGI",
         "/-[fullPath='" + executable + "', arguments='" + quoted_file + "', signalBeforeTerminateSeconds='30']"

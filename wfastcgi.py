@@ -14,10 +14,6 @@
 # See the Apache Version 2.0 License for specific language governing
 # permissions and limitations under the License.
 from __future__ import absolute_import, print_function, with_statement
-
-__author__ = "Microsoft Corporation <ptvshelp@microsoft.com>"
-__version__ = "3.0.0"
-
 import ctypes
 import datetime
 import os
@@ -43,6 +39,11 @@ if sys.version_info[0] == 3:
 else:
     def to_str(value):
         return value.encode(sys.getfilesystemencoding())
+
+
+__author__ = "Microsoft Corporation <ptvshelp@microsoft.com>"
+__version__ = "3.0.0"
+
 
 # http://www.fastcgi.com/devkit/doc/fcgi-spec.html#S3
 

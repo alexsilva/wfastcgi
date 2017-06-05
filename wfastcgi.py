@@ -874,7 +874,7 @@ def main():
 
                 # Configures the app as a site prefix (/LM/W3SVC/2/ROOT/app)
                 if 'APPL_MD_PATH' in record.params and record.params['APPL_MD_PATH']:
-                    app_name = "/" + record.params['APPL_MD_PATH'].rplit('/', 1)[-1]
+                    app_name = "/" + record.params['APPL_MD_PATH'].rsplit('/', 1)[-1]
                     os.environ['SCRIPT_NAME'] = os.environ.get('SCRIPT_NAME', app_name)
 
                 # correct SCRIPT_NAME and PATH_INFO if we are told what our SCRIPT_NAME should be

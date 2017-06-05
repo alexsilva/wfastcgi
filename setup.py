@@ -39,11 +39,11 @@ setup(
     py_modules=['wfastcgi'],
     install_requires=[],
     entry_points={
-        'console_scripts': [
-            'wfastcgi = wfastcgi:main',
-            'wfastcgi-enable = wfastcgi:enable',
-            'wfastcgi-disable = wfastcgi:disable',
-        ]
+        # 'console_scripts': [
+        #     'wfastcgi = wfastcgi:main',
+        #     'wfastcgi-enable = wfastcgi:enable',
+        #     'wfastcgi-disable = wfastcgi:disable',
+        # ]
     },
 )
 

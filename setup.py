@@ -1,10 +1,11 @@
 from setuptools import setup
-from os.path import join, split
+import codecs
 import os
 
 BASE_DIR = os.path.dirname(os.path.basename(__file__))
 
-with open(join(split(__file__)[0], 'README.rst')) as f:
+with codecs.open(os.path.join(BASE_DIR, 'README.rst'),
+                 encoding='utf-8') as f:
     long_description = f.read()
 
 try:

@@ -24,6 +24,8 @@ import struct
 import sys
 import traceback
 from xml.dom import minidom
+from watchdog.observers import Observer
+from watchdog.events import FileSystemEventHandler
 
 try:
     from cStringIO import StringIO
@@ -219,7 +221,7 @@ def read_fastcgi_record(stream):
         data = stream.read(8)  # read record
     except IOError:
         data = ''  # pipe closed
-    
+
     if not data:
         # no more data, our other process must have died...
         raise _ExitException()
@@ -573,6 +575,23 @@ def on_exit(task):
     _ON_EXIT_TASKS.append(task)
 
 
+class FileSystemEventHandlerImpl(FileSystemEventHandler):
+    """Class that receives events when files are changed"""
+
+    def __init__(self, restart_regex):
+        self.restart_regex = restart_regex
+        self.restart = re.compile(restart_regex)
+
+    def on_modified(self, event):
+        filename = event.src_path
+        if self.restart.match(filename):
+            log('wfastcgi.py exiting because %s has changed, matching %s' % (filename, self.restart_regex))
+            # we call ExitProcess directly to quickly shutdown the whole process
+            # because sys.exit(0) won't have an effect on the main thread.
+            run_exit_tasks()
+            ExitProcess(0)
+
+
 def start_file_watcher(path, restart_regex):
     if restart_regex is None:
         restart_regex = ".*((\\.py)|(\\.config))$"
@@ -580,81 +599,12 @@ def start_file_watcher(path, restart_regex):
         # restart regex set to empty string, no restart behavior
         return
 
-    def enum_changes(path):
-        """Returns a generator that blocks until a change occurs, then yields
-        the filename of the changed file.
-
-        Yields an empty string and stops if the buffer overruns, indicating that
-        too many files were changed."""
-
-        buffer = ctypes.create_string_buffer(32 * 1024)
-        bytes_ret = ctypes.c_uint32()
-
-        try:
-            the_dir = CreateFile(
-                path,
-                FILE_LIST_DIRECTORY,
-                FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
-                0,
-                OPEN_EXISTING,
-                FILE_FLAG_BACKUP_SEMANTICS,
-                0,
-            )
-        except OSError:
-            maybe_log("Unable to create watcher")
-            return
-
-        if not the_dir or the_dir == INVALID_HANDLE_VALUE:
-            maybe_log("Unable to create watcher")
-            return
-
-        while True:
-            ret_code = ReadDirectoryChangesW(
-                the_dir,
-                buffer,
-                ctypes.sizeof(buffer),
-                True,
-                FILE_NOTIFY_CHANGE_LAST_WRITE,
-                ctypes.byref(bytes_ret),
-                None,
-                None,
-            )
-
-            if ret_code:
-                cur_pointer = ctypes.addressof(buffer)
-                while True:
-                    fni = ctypes.cast(cur_pointer, ctypes.POINTER(FILE_NOTIFY_INFORMATION))
-                    # FileName is not null-terminated, so specifying length is mandatory.
-                    filename = ctypes.wstring_at(cur_pointer + 12, fni.contents.FileNameLength // 2)
-                    yield filename
-                    if fni.contents.NextEntryOffset == 0:
-                        break
-                    cur_pointer = cur_pointer + fni.contents.NextEntryOffset
-            elif GetLastError() == ERROR_NOTIFY_ENUM_DIR:
-                CloseHandle(the_dir)
-                yield ''
-                return
-            else:
-                CloseHandle(the_dir)
-                return
-
     log('wfastcgi.py will restart when files in %s are changed: %s' % (path, restart_regex))
 
-    def watcher(path, restart):
-        for filename in enum_changes(path):
-            if not filename:
-                log('wfastcgi.py exiting because the buffer was full')
-                run_exit_tasks()
-                ExitProcess(0)
-            elif restart.match(filename):
-                log('wfastcgi.py exiting because %s has changed, matching %s' % (filename, restart_regex))
-                # we call ExitProcess directly to quickly shutdown the whole process
-                # because sys.exit(0) won't have an effect on the main thread.
-                run_exit_tasks()
-                ExitProcess(0)
-
-    restart = re.compile(restart_regex)
-    start_new_thread(watcher, (path, restart))
+    observer = Observer()
+    event_handler = FileSystemEventHandlerImpl(restart_regex)
+    observer.schedule(event_handler, path, recursive=True)
+    observer.start()
 
 
 def get_wsgi_handler(handler_name):

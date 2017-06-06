@@ -37,7 +37,7 @@ setup(
 
     keywords='iis fastcgi wsgi windows server mod_python',
     py_modules=['wfastcgi'],
-    install_requires=[],
+    install_requires=['watchdog'],
     entry_points={
         # 'console_scripts': [
         #     'wfastcgi = wfastcgi:main',

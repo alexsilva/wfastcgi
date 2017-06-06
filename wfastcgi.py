@@ -86,6 +86,7 @@ class Logger(object):
     formatter = '%(asctime)s %(levelname)s %(message)s'
 
     def __init__(self, name):
+        self.name = name
         self.__init(name)
 
     def __init(self, name):
@@ -106,8 +107,8 @@ class Logger(object):
         self.logger.setLevel(logging.DEBUG)
         self.logger.addHandler(handler)
 
-    def __call__(self, name):
-        self.__init(name)
+    def __call__(self, name=None):
+        self.__init(name or self.name)
 
     def log(self, msg, level=logging.INFO):
         self.logger.log(level, msg)
@@ -117,8 +118,7 @@ class Logger(object):
 
 
 # wfastcgi
-logger_name = os.path.basename(os.path.splitext(__file__)[0])
-logger = Logger(logger_name)
+logger = Logger(os.path.basename(os.path.splitext(__file__)[0]))
 
 
 class FastCgiRecord(object):
@@ -856,7 +856,7 @@ def main(*args):
         env = read_environment_vars(physical_path)
 
     # setup logs
-    logger(logger_name)
+    logger()
 
     initialized = False
 

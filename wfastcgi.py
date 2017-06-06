@@ -14,8 +14,10 @@
 # See the Apache Version 2.0 License for specific language governing
 # permissions and limitations under the License.
 from __future__ import absolute_import, print_function, with_statement
+
 import ctypes
-import datetime
+import logging
+import logging.handlers
 import os
 import re
 import struct
@@ -77,6 +79,46 @@ FCGI_UNKNOWN_ROLE = 3
 FCGI_MAX_CONNS = "FCGI_MAX_CONNS"
 FCGI_MAX_REQS = "FCGI_MAX_REQS"
 FCGI_MPXS_CONNS = "FCGI_MPXS_CONNS"
+
+
+class Logger(object):
+    """ Main logger """
+    formatter = '%(asctime)s %(levelname)s %(message)s'
+
+    def __init__(self, name):
+        self.__init(name)
+
+    def __init(self, name):
+        self.logger = logging.getLogger(name)
+        filepath = os.environ.get("WSGI_LOG")
+        if not filepath:
+            self._add_handler(logging.StreamHandler(stream=sys.stdout))
+        elif os.environ.get("WSGI_LOG_ROTATE"):
+            self._add_handler(logging.handlers.RotatingFileHandler(
+                filepath,
+                maxBytes=int(os.environ.get('WSGI_LOG_ROTATE_MAXBYTES', 1024 ** 5)),
+                backupCount=int(os.environ.get('WSGI_LOG_ROTATE_BACKUP_COUNT', 3))))
+        else:
+            self._add_handler(logging.FileHandler(filepath))
+
+    def _add_handler(self, handler):
+        handler.setFormatter(logging.Formatter(os.environ.get('WSGI_LOG_FORMAT', self.formatter)))
+        self.logger.setLevel(logging.DEBUG)
+        self.logger.addHandler(handler)
+
+    def __call__(self, name):
+        self.__init(name)
+
+    def log(self, msg, level=logging.INFO):
+        self.logger.log(level, msg)
+
+    def debug(self, msg):
+        self.log(msg, level=logging.DEBUG)
+
+
+# wfastcgi
+logger_name = os.path.basename(os.path.splitext(__file__)[0])
+logger = Logger(logger_name)
 
 
 class FastCgiRecord(object):
@@ -370,11 +412,7 @@ def log(txt):
         except:
             pass
 
-    log_file = os.environ.get('WSGI_LOG')
-    if log_file:
-        with open(log_file, 'a+', encoding='utf-8') as f:
-            txt = txt.replace('\r\n', '\n')
-            f.write('%s: %s%s' % (datetime.datetime.now(), txt, '' if txt.endswith('\n') else '\n'))
+    logger.log(txt)
 
 
 def maybe_log(txt):
@@ -813,8 +851,12 @@ def main(*args):
     # root wsgi path
     physical_path = args[0]
 
+    # load env vars
     if os.path.isdir(physical_path):
         env = read_environment_vars(physical_path)
+
+    # setup logs
+    logger(logger_name)
 
     initialized = False
 

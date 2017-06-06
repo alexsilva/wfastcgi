@@ -40,10 +40,8 @@ else:
     def to_str(value):
         return value.encode(sys.getfilesystemencoding())
 
-
 __author__ = "Microsoft Corporation <ptvshelp@microsoft.com>"
 __version__ = "3.0.0"
-
 
 # http://www.fastcgi.com/devkit/doc/fcgi-spec.html#S3
 
@@ -811,8 +809,15 @@ class handle_response(object):
 _REQUESTS = {}
 
 
-def main():
+def main(*args):
+    # root wsgi path
+    physical_path = args[0]
+
+    if os.path.isdir(physical_path):
+        env = read_environment_vars(physical_path)
+
     initialized = False
+
     log('wfastcgi.py %s started' % __version__)
     log('Python version: %s' % sys.version)
 
@@ -839,7 +844,7 @@ def main():
                     os.chdir(response.physical_path)
                     sys.path[0] = '.'
 
-                    env = _set_script_name(read_environment_vars(response.physical_path), record)
+                    env = _set_script_name(env, record)
 
                     # Initialization errors should be treated as fatal.
                     response.fatal_errors = True
@@ -951,36 +956,46 @@ def get_filepath():
     return os.path.splitext(__file__)[0] + '.py'
 
 
-def enable():
+def quoted_path(path):
+    return '"' + path + '"' if ' ' in path else path
+
+
+def get_appcmd(executable, quoted_file, quoted_root='', add=False):
+    cmd = "/{}[fullPath='{}', arguments='{} {}', signalBeforeTerminateSeconds='30']" \
+        .format("+" if add else "-", executable, quoted_file, quoted_root)
+    return cmd
+
+
+def common_cmd(root_dir):
     executable = '"' + sys.executable + '"' if ' ' in sys.executable else sys.executable
-    filepath = get_filepath()
 
-    quoted_file = '"' + filepath + '"' if ' ' in filepath else filepath
+    quoted_file = quoted_path(get_filepath())
+    quoted_root = quoted_path(root_dir)
 
+    return executable, quoted_file, quoted_root
+
+
+def enable(root_dir):
+    executable, quoted_file, quoted_root = common_cmd(root_dir)
     res = _run_appcmd([
         "set", "config", "/section:system.webServer/fastCGI",
-        "/+[fullPath='" + executable + "', arguments='" + quoted_file + "', signalBeforeTerminateSeconds='30']"
+        get_appcmd(executable, quoted_file, quoted_root, add=True),
     ])
-
     if res == 0:
         print('"%s|%s" can now be used as a FastCGI script processor' % (executable, quoted_file))
     return res
 
 
-def disable():
-    executable = '"' + sys.executable + '"' if ' ' in sys.executable else sys.executable
-    filepath = get_filepath()
-
-    quoted_file = '"' + filepath + '"' if ' ' in filepath else filepath
+def disable(root_dir):
+    executable, quoted_file, quoted_root = common_cmd(root_dir)
     res = _run_appcmd([
         "set", "config", "/section:system.webServer/fastCGI",
-        "/-[fullPath='" + executable + "', arguments='" + quoted_file + "', signalBeforeTerminateSeconds='30']"
+        get_appcmd(executable, quoted_file, quoted_root)
     ])
-
     if res == 0:
         print('"%s|%s" is no longer registered for use with FastCGI' % (executable, quoted_file))
     return res
 
 
 if __name__ == '__main__':
-    main()
+    main(*sys.argv[1:])

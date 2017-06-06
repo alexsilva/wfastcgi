@@ -97,10 +97,11 @@ class Logger(object):
         if not filepath:
             self._add_handler(logging.StreamHandler(stream=sys.stdout))
         elif os.environ.get("WSGI_LOG_ROTATE"):
-            self._add_handler(logging.handlers.RotatingFileHandler(
+            from cloghandler import ConcurrentRotatingFileHandler
+            self._add_handler(ConcurrentRotatingFileHandler(
                 filepath,
                 maxBytes=int(os.environ.get('WSGI_LOG_ROTATE_MAXBYTES', 1024 ** 5)),
-                backupCount=int(os.environ.get('WSGI_LOG_ROTATE_BACKUP_COUNT', 3))))
+                backupCount=int(os.environ.get('WSGI_LOG_ROTATE_BACKUP_COUNT', 2))))
         else:
             self._add_handler(logging.FileHandler(filepath))
 

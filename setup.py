@@ -1,8 +1,23 @@
 from setuptools import setup
 from os.path import join, split
+import os
+
+BASE_DIR = os.path.dirname(os.path.basename(__file__))
 
 with open(join(split(__file__)[0], 'README.rst')) as f:
     long_description = f.read()
+
+try:
+    from pip.req import parse_requirements
+    from pip.download import PipSession
+
+    install_reqs = parse_requirements(os.path.join(BASE_DIR, 'requirements.txt'),
+                                      session=PipSession())
+
+    install_reqs = [str(ir.req) for ir in install_reqs]
+
+except ImportError:
+    install_reqs = []
 
 setup(
     name='wfastcgi',
@@ -37,10 +52,7 @@ setup(
 
     keywords='iis fastcgi wsgi windows server mod_python',
     py_modules=['wfastcgi'],
-    install_requires=[
-        'watchdog',
-        'ConcurrentLogHandler==0.8.7'
-    ],
+    install_requires=install_reqs,
     entry_points={
         # 'console_scripts': [
         #     'wfastcgi = wfastcgi:main',
@@ -49,4 +61,3 @@ setup(
         # ]
     },
 )
-

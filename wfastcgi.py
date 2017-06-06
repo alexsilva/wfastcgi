@@ -654,19 +654,33 @@ def get_wsgi_handler(handler_name):
     return handler
 
 
-def read_wsgi_handler(physical_path):
-    global APPINSIGHT_CLIENT
-    env = get_environment(physical_path)
-    os.environ.update(env)
+def _set_script_name(env, record):
+    """configures the app as a site prefix (/LM/W3SVC/2/ROOT/app)"""
+    if 'APPL_MD_PATH' in record.params and record.params['APPL_MD_PATH']:
+        app_name = "/" + record.params['APPL_MD_PATH'].rsplit('/', 1)[-1]
+        os.environ['SCRIPT_NAME'] = env.get('SCRIPT_NAME', app_name)
+    return env
+
+
+def _expand_python_path(env):
     for path in (v for k, v in env.items() if k.lower() == 'pythonpath'):
         # Expand environment variables manually.
-        expanded_path = re.sub(
-            '%(\\w+?)%',
-            lambda m: os.getenv(m.group(1), ''),
-            path
-        )
+        expanded_path = re.sub('%(\\w+?)%',
+                               lambda m: os.getenv(m.group(1), ''),
+                               path)
         sys.path.extend(fs_encode(p) for p in expanded_path.split(';') if p)
 
+
+def read_environment_vars(physical_path):
+    """Reads the configuration keys given in the web.config script"""
+    env = get_environment(physical_path)
+    os.environ.update(env)
+    _expand_python_path(env)
+    return env
+
+
+def read_wsgi_handler():
+    global APPINSIGHT_CLIENT
     handler = get_wsgi_handler(os.getenv("WSGI_HANDLER"))
     instr_key = os.getenv("APPINSIGHTS_INSTRUMENTATIONKEY")
     if instr_key:
@@ -682,7 +696,7 @@ def read_wsgi_handler(physical_path):
             # Ensure we will flush any remaining events when we exit
             on_exit(handler.client.flush)
 
-    return env, handler
+    return handler
 
 
 class handle_response(object):
@@ -825,10 +839,12 @@ def main():
                     os.chdir(response.physical_path)
                     sys.path[0] = '.'
 
+                    env = _set_script_name(read_environment_vars(response.physical_path), record)
+
                     # Initialization errors should be treated as fatal.
                     response.fatal_errors = True
                     response.error_message = 'Error occurred while reading WSGI handler'
-                    env, handler = read_wsgi_handler(response.physical_path)
+                    handler = read_wsgi_handler()
 
                     response.error_message = 'Error occurred starting file watcher'
                     start_file_watcher(response.physical_path, env.get('WSGI_RESTART_FILE_REGEX'))
@@ -872,11 +888,6 @@ def main():
                 if 'AllowPathInfoForScriptMappings' not in os.environ:
                     record.params['SCRIPT_NAME'] = ''
                     record.params['wsgi.script_name'] = wsgi_encode('')
-
-                # Configures the app as a site prefix (/LM/W3SVC/2/ROOT/app)
-                if 'APPL_MD_PATH' in record.params and record.params['APPL_MD_PATH']:
-                    app_name = "/" + record.params['APPL_MD_PATH'].rsplit('/', 1)[-1]
-                    os.environ['SCRIPT_NAME'] = os.environ.get('SCRIPT_NAME', app_name)
 
                 # correct SCRIPT_NAME and PATH_INFO if we are told what our SCRIPT_NAME should be
                 if 'SCRIPT_NAME' in os.environ and record.params['PATH_INFO'].lower().startswith(

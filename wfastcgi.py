@@ -215,7 +215,11 @@ else:
 
 def read_fastcgi_record(stream):
     """reads the main fast cgi record"""
-    data = stream.read(8)  # read record
+    try:
+        data = stream.read(8)  # read record
+    except IOError:
+        data = ''  # pipe closed
+    
     if not data:
         # no more data, our other process must have died...
         raise _ExitException()

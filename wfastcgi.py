@@ -801,16 +801,20 @@ class handle_response(object):
 _REQUESTS = {}
 
 
-def main(*args):
-    # root wsgi path
-    physical_path = args[0]
-
+def _load_init_config(physical_path):
     # load env vars
     if os.path.isdir(physical_path):
         env = read_environment_vars(physical_path)
+        # setup logs
+        logger()
+    else:
+        env = None
+    return env
 
-    # setup logs
-    logger()
+
+def main(*args):
+    # When the script was called with the wsgi main directory
+    env = _load_init_config(args[0])
 
     initialized = False
 
@@ -839,6 +843,9 @@ def main(*args):
 
                     os.chdir(response.physical_path)
                     sys.path[0] = '.'
+
+                    if env is None:
+                        env = _load_init_config(response.physical_path)
 
                     env = _set_script_name(env, record)
 

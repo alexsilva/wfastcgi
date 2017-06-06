@@ -594,6 +594,7 @@ class FileSystemEventHandlerImpl(FileSystemEventHandler):
 
 
 def start_file_watcher(path, restart_regex):
+    paths = path.split("|")
     if restart_regex is None:
         restart_regex = ".*((\\.py)|(\\.config))$"
     elif not restart_regex:
@@ -604,7 +605,12 @@ def start_file_watcher(path, restart_regex):
 
     observer = Observer()
     event_handler = FileSystemEventHandlerImpl(restart_regex)
-    observer.schedule(event_handler, path, recursive=True)
+    try:
+        recursive = bool(int(os.environ.get('WSGI_WATCHER_RECURSIVE')))
+    except ValueError:
+        recursive = False
+    for path in paths:
+        observer.schedule(event_handler, path, recursive=recursive)
     observer.start()
 
 
@@ -856,7 +862,8 @@ def main(*args):
                     handler = read_wsgi_handler()
 
                     response.error_message = 'Error occurred starting file watcher'
-                    start_file_watcher(response.physical_path, env.get('WSGI_RESTART_FILE_REGEX'))
+                    start_file_watcher(env.get('WSGI_WATCHER_DIRS', response.physical_path),
+                                       env.get('WSGI_RESTART_FILE_REGEX'))
 
                     # Enable debugging if possible. Default to local-only, but
                     # allow a web.config to override where we listen

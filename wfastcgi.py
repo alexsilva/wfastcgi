@@ -978,11 +978,9 @@ def get_appcmd(executable, quoted_file, quoted_root='', add=False):
 
 
 def common_cmd(root_dir):
-    executable = '"' + sys.executable + '"' if ' ' in sys.executable else sys.executable
-
+    executable = quoted_path(sys.executable)
     quoted_file = quoted_path(get_filepath())
     quoted_root = quoted_path(root_dir)
-
     return executable, quoted_file, quoted_root
 
 

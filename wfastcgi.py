@@ -971,46 +971,38 @@ def quoted_path(path):
     return '"' + path + '"' if ' ' in path else path
 
 
-def get_appcmd(executable, quoted_file, quoted_root='', add=False, **kwargs):
+def get_app_cmd(root_dir, add=False, **kwargs):
     cmd = "/{operation}[fullPath='{executable}', arguments='{script}{root}', {extra}]"
     # defaults
     kwargs.setdefault('signalBeforeTerminateSeconds', '30')
+    quoted_root = quoted_path(root_dir)
     options = {
         'operation': "+" if add else "-",
-        'executable': executable,
-        'script': quoted_file,
+        'executable': quoted_path(sys.executable),
+        'script': quoted_path(get_filepath()),
         'root': ' ' + quoted_root if quoted_root else quoted_root,
         'extra': ', '.join(["{}='{}'".format(*arg) for arg in kwargs.items()])
     }
     return cmd.format(**options)
 
 
-def common_cmd(root_dir):
-    executable = quoted_path(sys.executable)
-    quoted_file = quoted_path(get_filepath())
-    quoted_root = quoted_path(root_dir)
-    return executable, quoted_file, quoted_root
-
-
-def enable(root_dir):
-    executable, quoted_file, quoted_root = common_cmd(root_dir)
+def enable(root_dir, **kwargs):
     res = _run_appcmd([
         "set", "config", "/section:system.webServer/fastCGI",
-        get_appcmd(executable, quoted_file, quoted_root, add=True),
+        get_app_cmd(root_dir, add=True, **kwargs)
     ])
     if res == 0:
-        print('"%s|%s" can now be used as a FastCGI script processor' % (executable, quoted_file))
+        print('"%s|%s" can now be used as a FastCGI script processor' % (sys.executable, get_filepath()))
     return res
 
 
-def disable(root_dir):
-    executable, quoted_file, quoted_root = common_cmd(root_dir)
+def disable(root_dir, **kwargs):
     res = _run_appcmd([
         "set", "config", "/section:system.webServer/fastCGI",
-        get_appcmd(executable, quoted_file, quoted_root)
+        get_app_cmd(root_dir, add=False, **kwargs)
     ])
     if res == 0:
-        print('"%s|%s" is no longer registered for use with FastCGI' % (executable, quoted_file))
+        print('"%s|%s" is no longer registered for use with FastCGI' % (sys.executable, get_filepath()))
     return res
 
 

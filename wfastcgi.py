@@ -939,7 +939,7 @@ def main(*args):
 
 
 def get_iis_version():
-    """Returns the version of this installed on the system (x.x)"""
+    """Returns the version of IIS installed on the system (x.x)"""
     try:
         import _winreg as winreg
     except ImportError:

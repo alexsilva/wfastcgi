@@ -23,6 +23,7 @@ import re
 import struct
 import sys
 import traceback
+import warnings
 from xml.dom import minidom
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
@@ -938,20 +939,25 @@ def main(*args):
 
 
 def get_iis_version():
-    """Returns the version of this installed on the system"""
+    """Returns the version of this installed on the system (x.x)"""
     try:
         import _winreg as winreg
     except ImportError:
         import winreg
+    msg = ">> Unable to determine iis version"
     try:
         with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, 'SOFTWARE\Microsoft\InetStp') as key:
             try:
-                version_string = winreg.QueryValueEx(key, "VersionString")[0]
+                major = winreg.QueryValueEx(key, "MajorVersion")[0]
+                minor = winreg.QueryValueEx(key, "MinorVersion")[0]
+                version = "{!s}.{!s}".format(major, minor)
             except IndexError:
-                version_string = ''
+                warnings.warn(msg)
+                version = ''
     except WindowsError:
-        version_string = ''
-    return version_string.lower()
+        warnings.warn(msg)
+        version = ''
+    return version
 
 
 def _run_appcmd(args):

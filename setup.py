@@ -22,7 +22,7 @@ except ImportError:
 
 setup(
     name='wfastcgi',
-    version='3.2.0',
+    version='3.2.1',
 
     description='An IIS-Python bridge based on WSGI and FastCGI.',
     long_description=long_description,

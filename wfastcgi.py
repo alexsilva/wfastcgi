@@ -597,8 +597,8 @@ def start_file_watcher(path, restart_regex):
     paths = path.split("|")
     if restart_regex is None:
         restart_regex = ".*((\\.py)|(\\.config))$"
-    elif not restart_regex:
-        # restart regex set to empty string, no restart behavior
+    elif not restart_regex or not paths:
+        # restart regex or paths set to empty string, no restart behavior
         return
 
     log('wfastcgi.py will restart when files in %s are changed: %s' % (path, restart_regex))

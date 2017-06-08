@@ -595,7 +595,7 @@ class FileSystemEventHandlerImpl(FileSystemEventHandler):
 
 
 def start_file_watcher(path, restart_regex):
-    paths = path.split("|")
+    paths = filter(os.path.exists, path.split("|"))
     if restart_regex is None:
         restart_regex = ".*((\\.py)|(\\.config))$"
     elif not restart_regex or not paths:

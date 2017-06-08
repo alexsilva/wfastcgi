@@ -950,13 +950,13 @@ def get_iis_version():
             try:
                 major = winreg.QueryValueEx(key, "MajorVersion")[0]
                 minor = winreg.QueryValueEx(key, "MinorVersion")[0]
-                version = "{!s}.{!s}".format(major, minor)
-            except IndexError:
+                version = float("{!s}.{!s}".format(major, minor))
+            except (IndexError, ValueError):
                 warnings.warn(msg)
-                version = ''
+                version = 0.0
     except WindowsError:
         warnings.warn(msg)
-        version = ''
+        version = 0.0
     return version
 
 
@@ -994,10 +994,15 @@ def quoted_path(path):
     return '"' + path + '"' if ' ' in path else path
 
 
+IIS_VERSION = 7.5
+
+
 def get_app_cmd(root_dir, add=False, **kwargs):
     cmd = "/{operation}[fullPath='{executable}', arguments='{script}{root}', {extra}]"
     # defaults
-    kwargs.setdefault('signalBeforeTerminateSeconds', '30')
+    if get_iis_version() >= IIS_VERSION:
+        # https://www.iis.net/configreference/system.webserver/fastcgi
+        kwargs.setdefault('signalBeforeTerminateSeconds', '30')
     quoted_root = quoted_path(root_dir)
     options = {
         'operation': "+" if add else "-",

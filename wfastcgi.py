@@ -971,10 +971,18 @@ def quoted_path(path):
     return '"' + path + '"' if ' ' in path else path
 
 
-def get_appcmd(executable, quoted_file, quoted_root='', add=False):
-    cmd = "/{}[fullPath='{}', arguments='{} {}', signalBeforeTerminateSeconds='30']" \
-        .format("+" if add else "-", executable, quoted_file, quoted_root)
-    return cmd
+def get_appcmd(executable, quoted_file, quoted_root='', add=False, **kwargs):
+    cmd = "/{operation}[fullPath='{executable}', arguments='{script}{root}', {extra}]"
+    # defaults
+    kwargs.setdefault('signalBeforeTerminateSeconds', '30')
+    options = {
+        'operation': "+" if add else "-",
+        'executable': executable,
+        'script': quoted_file,
+        'root': ' ' + quoted_root if quoted_root else quoted_root,
+        'extra': ', '.join(["{}='{}'".format(*arg) for arg in kwargs.items()])
+    }
+    return cmd.format(**options)
 
 
 def common_cmd(root_dir):

@@ -937,6 +937,23 @@ def main(*args):
         maybe_log('wfastcgi.py %s closed' % __version__)
 
 
+def get_iis_version():
+    """Returns the version of this installed on the system"""
+    try:
+        import _winreg as winreg
+    except ImportError:
+        import winreg
+    try:
+        with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, 'SOFTWARE\Microsoft\InetStp') as key:
+            try:
+                version_string = winreg.QueryValueEx(key, "VersionString")[0]
+            except IndexError:
+                version_string = ''
+    except WindowsError:
+        version_string = ''
+    return version_string.lower()
+
+
 def _run_appcmd(args):
     from subprocess import check_call, CalledProcessError
 

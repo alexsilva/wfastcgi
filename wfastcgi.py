@@ -46,7 +46,7 @@ else:
         return value.encode(sys.getfilesystemencoding())
 
 __author__ = "Microsoft Corporation <ptvshelp@microsoft.com>"
-__version__ = "3.0.0"
+__version__ = "3.2.1"
 
 # http://www.fastcgi.com/devkit/doc/fcgi-spec.html#S3
 

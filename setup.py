@@ -33,7 +33,7 @@ setup(
     author_email='ptvshelp@microsoft.com',
     license='Apache License 2.0',
     dependency_links=[
-        "https://github.com/alexsilva/ConcurrentLogHandler/archive/dev.zip",
+        "https://github.com/alexsilva/ConcurrentLogHandler/tarball/dev#egg=ConcurrentLogHandler-0.10.1",
     ],
     # See https://pypi.python.org/pypi?%3Aaction=list_classifiers
     classifiers=[

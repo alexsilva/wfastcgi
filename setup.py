@@ -22,7 +22,7 @@ except ImportError:
 
 setup(
     name='wfastcgi',
-    version='3.2.2',
+    version='3.2.3',
 
     description='An IIS-Python bridge based on WSGI and FastCGI.',
     long_description=long_description,
@@ -32,7 +32,9 @@ setup(
     author='Microsoft Corporation',
     author_email='ptvshelp@microsoft.com',
     license='Apache License 2.0',
-
+    dependency_links=[
+        "https://github.com/alexsilva/ConcurrentLogHandler/archive/dev.zip#egg=ConcurrentLogHandler-0.10.1",
+    ],
     # See https://pypi.python.org/pypi?%3Aaction=list_classifiers
     classifiers=[
         'Development Status :: 6 - Mature',

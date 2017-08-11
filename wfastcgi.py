@@ -754,6 +754,12 @@ class handle_response(object):
             # finish the response or the user will only see a generic 500
             # error.
             maybe_log(error_msg)
+        else:
+            # Prints the output of data to the log.
+            for output in self._get_output().split("\n"):
+                output = output.strip()
+                if output:
+                    maybe_log(output)
 
         # End the request. This has to run in both success and failure cases.
         self.send(FCGI_END_REQUEST, zero_bytes(8), streaming=False)

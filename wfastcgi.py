@@ -657,7 +657,8 @@ def get_wsgi_handler(handler_name):
 def _set_script_name(env, record):
     """configures the app as a site prefix (/LM/W3SVC/2/ROOT/app)"""
     if 'APPL_MD_PATH' in record.params and record.params['APPL_MD_PATH']:
-        path = "/" + record.params['APPL_MD_PATH'].rsplit('/', 1)[-1]
+        match = re.match("/LM/W\d+SVC/\d+/ROOT(.*)", record.params['APPL_MD_PATH'], re.I)
+        path = match.group(1)
         if not os.environ.get('SCRIPT_NAME', '').startswith(path):
             os.environ['SCRIPT_NAME'] = env.get('SCRIPT_NAME', path)
     return env

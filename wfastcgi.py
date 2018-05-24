@@ -121,7 +121,7 @@ class Logger(object):
 
         dirpath = os.path.dirname(filepath)
 
-        return os.path.join(dirpath, self.hash + os.path.basename(filepath))
+        return os.path.join(dirpath, self.hash + "_" + os.path.basename(filepath))
 
     def __init(self, name):
         self.logger = logging.getLogger(name)

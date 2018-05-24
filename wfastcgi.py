@@ -112,9 +112,17 @@ class Logger(object):
         os.environ[self.name.upper() + "_" + self.environ_name] = _hash
         return _hash
 
+    @property
+    def load_balance_enable(self):
+        try:
+            is_enable = bool(int(os.environ.get("WSGI_LOAD_BALANCE_ENABLE", 0)))
+        except ValueError:
+            is_enable = False
+        return is_enable
+
     def make_safe_filepath(self, filepath):
         """Generates a new path using the server's unique hash"""
-        if filepath is None:
+        if not self.load_balance_enable or filepath is None:
             return filepath
 
         filepath = os.path.abspath(os.path.normpath(filepath))

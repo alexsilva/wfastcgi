@@ -112,13 +112,20 @@ class Logger(object):
         os.environ[self.name.upper() + "_" + self.environ_name] = _hash
         return _hash
 
-    @property
-    def load_balance_enable(self):
+    def _get_boolean(self, name):
         try:
-            is_enable = bool(int(os.environ.get("WSGI_LOAD_BALANCE_ENABLE", 0)))
+            is_enable = bool(int(os.environ.get(name, 0)))
         except ValueError:
             is_enable = False
         return is_enable
+
+    @property
+    def load_balance_enable(self):
+        return self._get_boolean("WSGI_LOAD_BALANCE_ENABLE")
+
+    @property
+    def log_rotate_enable(self):
+        return self._get_boolean("WSGI_LOG_ROTATE")
 
     def make_safe_filepath(self, filepath):
         """Generates a new path using the server's unique hash"""
@@ -136,7 +143,7 @@ class Logger(object):
         filepath = self.make_safe_filepath(os.environ.get("WSGI_LOG"))
         if not filepath:
             self._add_handler(logging.StreamHandler(stream=sys.stdout))
-        elif os.environ.get("WSGI_LOG_ROTATE"):
+        elif self.log_rotate_enable:
             from cloghandler import ConcurrentRotatingFileHandler
             self._add_handler(ConcurrentRotatingFileHandler(
                 filepath,

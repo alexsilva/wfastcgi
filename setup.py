@@ -18,7 +18,7 @@ def parse(filepath):
     """Returns a list of strings with the requirments registered in the file"""
     requirements = []
     for lib in parse_requirements(filepath, session=PipSession()):
-        if lib.req is None:
+        if lib.req is not None:
             requirements.append(str(lib.req))
     return requirements
 

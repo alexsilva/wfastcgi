@@ -14,11 +14,14 @@ else:
     from pip._internal.download import PipSession
 
 
-def parse(filepath):
+def parse(filepath, links=False):
     """Returns a list of strings with the requirments registered in the file"""
     requirements = []
     for lib in parse_requirements(filepath, session=PipSession()):
-        if lib.req is not None:
+        if links:
+            if hasattr(lib.link, 'url'):
+                requirements.append(lib.link.url)
+        elif lib.req is not None:
             requirements.append(str(lib.req))
     return requirements
 
@@ -39,9 +42,8 @@ setup(
     author='Microsoft Corporation',
     author_email='ptvshelp@microsoft.com',
     license='Apache License 2.0',
-    dependency_links=[
-        "https://github.com/alexsilva/ConcurrentLogHandler/tarball/dev#egg=ConcurrentLogHandler-0.10.1",
-    ],
+    dependency_links=parse(os.path.join(BASE_DIR, 'requirements.txt'),
+                           links=True),
     # See https://pypi.python.org/pypi?%3Aaction=list_classifiers
     classifiers=[
         'Development Status :: 6 - Mature',

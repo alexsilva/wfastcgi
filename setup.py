@@ -16,8 +16,11 @@ else:
 
 def parse(filepath):
     """Returns a list of strings with the requirments registered in the file"""
-    requirements = parse_requirements(filepath, session=PipSession())
-    return [str(ir.req) for ir in requirements]
+    requirements = []
+    for lib in parse_requirements(filepath, session=PipSession()):
+        if lib.req is None:
+            requirements.append(str(lib.req))
+    return requirements
 
 
 with codecs.open(os.path.join(BASE_DIR, 'README.rst'),

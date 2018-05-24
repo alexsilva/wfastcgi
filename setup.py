@@ -1,24 +1,28 @@
-from setuptools import setup
 import codecs
 import os
 
+import pip
+from setuptools import setup
+
 BASE_DIR = os.path.dirname(os.path.basename(__file__))
+
+if pip.__version__ < "10.0.0":
+    from pip.req import parse_requirements
+    from pip.download import PipSession
+else:
+    from pip._internal.req import parse_requirements
+    from pip._internal.download import PipSession
+
+
+def parse(filepath):
+    """Returns a list of strings with the requirments registered in the file"""
+    requirements = parse_requirements(filepath, session=PipSession())
+    return [str(ir.req) for ir in requirements]
+
 
 with codecs.open(os.path.join(BASE_DIR, 'README.rst'),
                  encoding='utf-8') as f:
     long_description = f.read()
-
-try:
-    from pip.req import parse_requirements
-    from pip.download import PipSession
-
-    install_reqs = parse_requirements(os.path.join(BASE_DIR, 'requirements.txt'),
-                                      session=PipSession())
-
-    install_reqs = [str(ir.req) for ir in install_reqs]
-
-except ImportError:
-    install_reqs = []
 
 setup(
     name='wfastcgi',
@@ -55,7 +59,7 @@ setup(
 
     keywords='iis fastcgi wsgi windows server mod_python',
     py_modules=['wfastcgi'],
-    install_requires=install_reqs,
+    install_requires=parse(os.path.join(BASE_DIR, 'requirements.txt')),
     entry_points={
         # 'console_scripts': [
         #     'wfastcgi = wfastcgi:main',

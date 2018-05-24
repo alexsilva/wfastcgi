@@ -26,7 +26,7 @@ with codecs.open(os.path.join(BASE_DIR, 'README.rst'),
 
 setup(
     name='wfastcgi',
-    version='3.2.4',
+    version='3.3.4',
 
     description='An IIS-Python bridge based on WSGI and FastCGI.',
     long_description=long_description,

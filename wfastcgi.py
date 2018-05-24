@@ -15,11 +15,13 @@
 # permissions and limitations under the License.
 from __future__ import absolute_import, print_function, with_statement
 
+import base64
 import ctypes
 import logging
 import logging.handlers
 import os
 import re
+import socket
 import struct
 import sys
 import traceback
@@ -88,13 +90,42 @@ class Logger(object):
     """ Main logger """
     formatter = '%(asctime)s %(levelname)s %(message)s'
 
+    environ_name = "LOAD_BALANCE_HASH"
+
     def __init__(self, name):
         self.name = name
+        # Each machine generates a unique hash
+        self.hash = self.generate_hash()
         self.__init(name)
+
+    def generate_hash(self):
+        """Generates a new secure name to use in a load balance environment"""
+        # noinspection PyBroadException
+        try:
+            # Use the machine's ip
+            _hash = socket.gethostbyname(socket.gethostname())
+        except:
+            _hash = socket.gethostname()
+        _hash = base64.urlsafe_b64encode(_hash)
+        # The generated code can be accessed through the
+        # environment variable WFASTCGI_LOAD_BALANCE_HASH
+        os.environ[self.name.upper() + "_" + self.environ_name] = _hash
+        return _hash
+
+    def make_safe_filepath(self, filepath):
+        """Generates a new path using the server's unique hash"""
+        if filepath is None:
+            return filepath
+
+        filepath = os.path.abspath(os.path.normpath(filepath))
+
+        dirpath = os.path.dirname(filepath)
+
+        return os.path.join(dirpath, self.hash + os.path.basename(filepath))
 
     def __init(self, name):
         self.logger = logging.getLogger(name)
-        filepath = os.environ.get("WSGI_LOG")
+        filepath = self.make_safe_filepath(os.environ.get("WSGI_LOG"))
         if not filepath:
             self._add_handler(logging.StreamHandler(stream=sys.stdout))
         elif os.environ.get("WSGI_LOG_ROTATE"):
@@ -103,7 +134,7 @@ class Logger(object):
                 filepath,
                 maxBytes=int(os.environ.get('WSGI_LOG_ROTATE_MAXBYTES', 1024 ** 5)),
                 backupCount=int(os.environ.get('WSGI_LOG_ROTATE_BACKUP_COUNT', 2)),
-                lock_filename=os.environ.get("WSGI_LOG_LOCK")
+                lock_filename=self.make_safe_filepath(os.environ.get("WSGI_LOG_LOCK"))
             ))
         else:
             self._add_handler(logging.FileHandler(filepath))

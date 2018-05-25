@@ -146,10 +146,11 @@ class Logger(object):
         elif self.log_rotate_enable:
             from cloghandler import ConcurrentRotatingFileHandler
             self._add_handler(ConcurrentRotatingFileHandler(
-                filepath,
+                filepath, mode="a+",
                 maxBytes=int(os.environ.get('WSGI_LOG_ROTATE_MAXBYTES', 1024 ** 5)),
                 backupCount=int(os.environ.get('WSGI_LOG_ROTATE_BACKUP_COUNT', 2)),
-                lock_filename=self.make_safe_filepath(os.environ.get("WSGI_LOG_LOCK"))
+                lock_filename=self.make_safe_filepath(os.environ.get("WSGI_LOG_LOCK")),
+                debug=False
             ))
         else:
             self._add_handler(logging.FileHandler(filepath))

@@ -104,9 +104,11 @@ class Logger(object):
         try:
             # Use the machine's ip
             _hash = socket.gethostbyname(socket.gethostname())
-        except:
+        except Exception:
             _hash = socket.gethostname()
-        _hash = base64.urlsafe_b64encode(_hash)
+        _hash = base64.urlsafe_b64encode(_hash.encode(encoding=sys.getdefaultencoding(),
+                                                      errors='replace'))
+        _hash = _hash.decode(encoding=sys.getdefaultencoding())
         # The generated code can be accessed through the
         # environment variable WFASTCGI_LOAD_BALANCE_HASH
         os.environ[self.name.upper() + "_" + self.environ_name] = _hash

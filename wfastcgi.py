@@ -214,11 +214,11 @@ class _ExitException(Exception):
 if sys.version_info[0] >= 3:
     # indexing into byte strings gives us an int, so
     # ord is unnecessary on Python 3
-    def ord(x):
+    def xord(x):
         return x
 
 
-    def chr(x):
+    def xchr(x):
         return bytes((x,))
 
 
@@ -242,7 +242,7 @@ if sys.version_info[0] >= 3:
 else:
     # Replace the builtin open with one that supports an encoding parameter
     from codecs import open
-
+    xord, xchr = ord, chr
 
     def wsgi_decode(x):
         return x
@@ -293,7 +293,7 @@ def read_fastcgi_record(stream):
 
     # unknown type requested, send response
     log('Unknown request type %s' % reqtype)
-    send_response(stream, req_id, FCGI_UNKNOWN_TYPE, chr(reqtype) + zero_bytes(7))
+    send_response(stream, req_id, FCGI_UNKNOWN_TYPE, xchr(reqtype) + zero_bytes(7))
     return None
 
 
@@ -311,8 +311,8 @@ def read_fastcgi_begin_request(stream, req_id, content):
     res = FastCgiRecord(
         FCGI_BEGIN_REQUEST,
         req_id,
-        (ord(content[0]) << 8) | ord(content[1]),  # role
-        ord(content[2]),  # flags
+        (xord(content[0]) << 8) | xord(content[1]),  # role
+         xord(content[2]),  # flags
     )
     _REQUESTS[req_id] = res
 

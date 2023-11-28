@@ -8,6 +8,15 @@ Server.
 It can be used with any Python web application or framework that supports WSGI,
 and provides an efficient way to handle requests and process pools through IIS.
 
+Warning!
+========
+
+The script `wfastcgi.py` is just part of the original code developed by Microsoft and perhaps you would like to take a look at the original code first.
+
+https://github.com/Microsoft/PTVS/tree/main/Python/Product/WFastCgi
+
+This 'fork' was created to add some features that were missing such as adding the path script to a website path, logs and also makes use of the watchdog for reloading.
+
 Installation
 ============
 
